@@ -1,0 +1,34 @@
+
+USE DATABASE MY_DB;
+CREATE OR REPLACE PROCEDURE SILVER.SP_RUN_GOLD()
+RETURNS STRING  -- o otro tipo si aplica
+LANGUAGE SQL    -- puede ser SQL o JAVASCRIPT
+AS
+$$
+DECLARE
+    EXCEPTION_1 EXCEPTION (-20001, 'ERROR EN AL CREAR O CARGAR DATOS EN IRE_ATRIBUTOS O ESTRUCTURA_ATRIBUTOS');
+BEGIN
+    
+    /*
+    ------------------------------------------------------------------------------------------------------------------------------------
+    CARGA ATRIBUTOS O ESTRUCTURA
+    ------------------------------------------------------------------------------------------------------------------------------------
+    */
+
+    BEGIN
+        EXECUTE IMMEDIATE FROM @MY_DB.PUBLIC.code_stage/silver/gold.sql;
+    EXCEPTION
+        WHEN OTHER THEN 
+            INSERT INTO CTRL.LOGS(ts,procedimiento,mensaje)
+            values(
+                current_timestamp(),'gold.sql','ERROR EN LA CARGA DEL TOTAL EN ATRIBUTOS O EN ESTRUCTURA'
+            );
+            RAISE EXCEPTION_1;
+        END;
+
+    RETURN 'OK DEL TOTAL EN ATRIBUTOS O EN ESTRUCTURA ';  -- salida del SP
+EXCEPTION
+    WHEN EXCEPTION_1 THEN
+        RETURN 'ERROR EN LA CARGA DEL TOTAL EN ATRIBUTOS O EN ESTRUCTURA';
+END;
+$$;
